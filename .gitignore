@@ -7,3 +7,6 @@ pom.xml.asc
 .lein-failures
 .lein-deps-sum
 .lein-repl-history
+/tmp
+.nrepl-port
+/.calva

@@ -1,14 +1,15 @@
 (ns ns-tracker.core
   "Keeps track of which namespaces have changed and need to be reloaded."
-  (:import java.io.PushbackReader
-           java.io.File)
+  (:import java.io.File
+           java.io.PushbackReader)
   (:require [clojure.java.io :as io]
             [clojure.set :refer [union]]
             [clojure.tools.namespace.file :refer [clojure-file?]]
             [clojure.tools.namespace.parse :refer [read-ns-decl]]
-            [ns-tracker.dependency :refer [graph seq-union depend dependents remove-key]]
+            [ns-tracker.dependency :refer [graph depend dependents remove-key]]
             [ns-tracker.nsdeps :refer [deps-from-ns-decl]]
-            [ns-tracker.parse :refer [read-in-ns-decl]]))
+            [ns-tracker.parse :refer [read-in-ns-decl]]
+            [ns-tracker.sort :refer [sort-dependencies]]))
 
 (defn- file? [f]
   (instance? java.io.File f))
@@ -74,9 +75,10 @@
       (add-to-dep-graph new-decls dirs)))
 
 (defn- affected-namespaces [changed-namespaces old-dependency-graph]
-  (apply seq-union changed-namespaces
-         (map #(dependents old-dependency-graph %)
-              changed-namespaces)))
+  (->> (map #(dependents old-dependency-graph %)
+            changed-namespaces)
+       (apply union changed-namespaces)
+       (sort-dependencies old-dependency-graph)))
 
 (defn- make-file [f]
   {:pre [(or (string? f) (file? f))]}
